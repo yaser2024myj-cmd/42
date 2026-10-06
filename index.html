@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FNAF Mafia 42 - لعبة مافيا فناف</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #08080c;
+            color: #e2e8f0;
+            user-select: none;
+            overflow-x: hidden;
+        }
+        .pixel-font { font-family: 'Press Start 2P', cursive; }
+        .fnaf-border {
+            border: 2px solid #ef4444;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4), inset 0 0 15px rgba(239, 68, 68, 0.2);
+        }
+        .gold-border {
+            border: 2px solid #eab308;
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.4);
+        }
+        .purple-border {
+            border: 2px solid #a855f7;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+        }
+        .crt-overlay {
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+        .flicker {
+            animation: flicker 3s infinite;
+        }
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+            52% { opacity: 0.3; }
+            54% { opacity: 0.9; }
+            80% { opacity: 0.95; }
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between relative overflow-x-hidden">
+    <div class="fixed inset-0 crt-overlay z-50 pointer-events-none"></div>
+
+    <!-- MAIN CONTAINER -->
+    <div id="app-container" class="max-w-4xl mx-auto w-full min-h-screen flex flex-col p-4 relative z-10">
+
+        <!-- TOP HEADER NAVBAR -->
+        <header class="flex justify-between items-center bg-slate-900/80 p-3 rounded-xl border border-slate-800 backdrop-blur-md mb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-red-950 border border-red-600 flex items-center justify-center text-red-500 font-bold text-xl shadow-lg">
+                    <i class="fa-solid fa-ghost"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-xl tracking-wider text-red-500 pixel-font flex items-center gap-2">
+                        FNAF MAFIA 42
+                        <span id="admin-badge" class="hidden px-2 py-0.5 text-xs bg-purple-900/80 text-purple-300 border border-purple-500 rounded font-sans">ADMIN</span>
+                    </h1>
+                    <p class="text-xs text-slate-400" id="header-user-status">غير مسجل الدخول</p>
+                </div>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="flex items-center gap-2">
+                <button id="secret-reset-btn" onclick="handleSecretResetClick()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition border border-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>إعادة ضبط (<span id="reset-click-count">0</span>/7)</span>
+                </button>
+                <button id="admin-panel-btn" onclick="openAdminModal()" class="hidden px-3 py-1.5 bg-purple-900/80 hover:bg-purple-800 text-purple-200 text-xs rounded-lg transition border border-purple-600 flex items-center gap-1">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span>الأدمن</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- SCREEN 1: AUTHENTICATION (LOGIN / REGISTER) -->
+        <div id="screen-auth" class="flex-1 flex flex-col items-center justify-center py-6">
+            <div class="w-full max-w-md bg-slate-900/90 border border-slate-800 p-6 rounded-2xl shadow-2xl backdrop-blur-md text-center">
+                <div class="mb-6">
+                    <i class="fa-solid fa-mask text-5xl text-red-600 mb-3 flicker"></i>
+                    <h2 class="text-2xl font-bold text-slate-100">مرحباً بك في ليلتك المرعبة</h2>
+                    <p class="text-xs text-slate-400 mt-1">سجل دخولك أو أنشئ حساباً جديداً لبدء اللعب والتنافس</p>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex bg-slate-950 p-1 rounded-xl mb-6 border border-slate-800">
+                    <button id="tab-login-btn" onclick="switchAuthTab('login')" class="flex-1 py-2 text-sm font-bold rounded-lg bg-red-600 text-white transition">تسجيل الدخول</button>
+                    <button id="tab-register-btn" onclick="switchAuthTab('register')" class="flex-1 py-2 text-sm font-bold rounded-lg text-slate-400 hover:text-slate-200 transition">حساب جديد</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4 text-right">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">اسم المستخدم</label>
+                        <input type="text" id="login-username" required placeholder="أدخل اسمك..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-red-500 text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">كلمة المرور</label>
+                        <input type="password" id="login-password" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-red-500 text-slate-100">
+                    </div>
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-lg transition active:scale-95">دخول</button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 text-right hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">اسم الحساب الجديد</label>
+                        <input type="text" id="reg-username" required placeholder="اختر اسم مستخدم..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-red-500 text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">كلمة المرور</label>
+                        <input type="password" id="reg-password" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-red-500 text-slate-100">
+                    </div>
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-lg transition active:scale-95">إنشاء الحساب</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: MAIN LOBBY & MENU -->
+        <div id="screen-lobby" class="hidden flex-1 flex flex-col space-y-4">
+            
+            <!-- User Status Card -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div id="user-avatar" class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl text-yellow-500">
+                        🐻
+                    </div>
+                    <div>
+                        <h3 id="lobby-username" class="font-bold text-lg text-slate-100">اسم اللاعب</h3>
+                        <p class="text-xs text-slate-400 flex items-center gap-2">
+                            <span>المستوى: <strong id="lobby-user-lvl" class="text-red-400">1</strong></span>
+                            <span>•</span>
+                            <span>النقاط: <strong id="lobby-user-coins" class="text-yellow-400">500</strong> 🪙</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="navigateTo('gacha')" class="px-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-500/50 text-yellow-300 font-bold text-sm rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-box-open"></i>
+                        <span>فتح البكجات</span>
+                    </button>
+                    <button onclick="handleLogout()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 text-sm rounded-xl transition">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Create / Join Room Section -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <!-- Left: Create Room Form -->
+                <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl space-y-4">
+                    <h3 class="font-bold text-slate-200 border-b border-slate-800 pb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-plus-circle text-red-500"></i>
+                        <span>إنشاء غرفة جديدة</span>
+                    </h3>
+
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">اسم الغرفة</label>
+                        <input type="text" id="new-room-name" placeholder="غرفة الرعب..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-red-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">نوع المحادثة</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="mode-chat-btn" onclick="setRoomMode('chat')" class="py-2 px-3 border border-red-500 bg-red-950/40 text-red-300 text-xs font-bold rounded-xl flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-comments"></i> شات كتابي
+                            </button>
+                            <button id="mode-voice-btn" onclick="setRoomMode('voice')" class="py-2 px-3 border border-slate-800 bg-slate-950 text-slate-400 text-xs font-bold rounded-xl flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-microphone"></i> غرف صوتية
+                            </button>
+                        </div>
+                    </div>
+
+                    <button onclick="createNewRoom()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-gamepad"></i>
+                        <span>إنشاء الغرفة والانتظار</span>
+                    </button>
+                </div>
+
+                <!-- Right: Active Rooms List -->
+                <div class="md:col-span-2 bg-slate-900/80 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-3">
+                            <h3 class="font-bold text-slate-200 flex items-center gap-2">
+                                <i class="fa-solid fa-list text-red-500"></i>
+                                <span>الغرف المتاحة</span>
+                            </h3>
+                            <button onclick="renderLobbyRooms()" class="text-xs text-slate-400 hover:text-slate-200">
+                                <i class="fa-solid fa-arrows-rotate"></i> تحديث
+                            </button>
+                        </div>
+
+                        <div id="rooms-container" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                            <!-- Rooms list injected by JS -->
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-500 flex justify-between items-center">
+                        <span>الحد الأدنى للبدء: 4 لاعبين</span>
+                        <span class="text-emerald-400"><i class="fa-solid fa-wifi"></i> نظام سحابي شبكي متصل</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Character Collection Showcase -->
+            <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+                <h3 class="font-bold text-slate-200 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-users text-yellow-500"></i>
+                    <span>مجموعتك من شخصيات FNAF</span>
+                </h3>
+                <div id="user-characters-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
+                    <!-- Cards injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: GACHA / PACK UNLOCKING SYSTEM -->
+        <div id="screen-gacha" class="hidden flex-1 flex flex-col items-center justify-center py-4">
+            <div class="w-full max-w-xl bg-slate-900/90 border border-slate-800 rounded-2xl p-6 text-center backdrop-blur-md relative">
+                <button onclick="navigateTo('lobby')" class="absolute top-4 right-4 text-slate-400 hover:text-white text-sm bg-slate-800 p-2 rounded-xl">
+                    <i class="fa-solid fa-arrow-right"></i> العودة للرئيسية
+                </button>
+
+                <h2 class="text-2xl font-bold text-yellow-400 mb-1 pixel-font">متجر بكجات FNAF</h2>
+                <p class="text-xs text-slate-400 mb-6">افتح البكجات لجمع شخصيات المافيا المميزة وإلغاء قفل "ويليام أفتن" النادر جداً!</p>
+
+                <!-- Box Visual Container -->
+                <div class="my-6 relative flex justify-center items-center">
+                    <div id="gacha-box-icon" class="w-36 h-36 rounded-2xl bg-gradient-to-br from-yellow-600 to-red-800 border-4 border-yellow-400 flex items-center justify-center text-6xl text-slate-900 shadow-2xl cursor-pointer hover:scale-105 transition transform">
+                        📦
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <span class="text-sm text-slate-300">رصيدك الحالي: </span>
+                    <span id="gacha-user-coins" class="font-bold text-yellow-400 text-lg">500</span> 🪙
+                </div>
+
+                <!-- Open Pack Button -->
+                <button onclick="openGachaPack()" class="px-8 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-slate-950 font-black rounded-xl shadow-xl transition transform active:scale-95 text-base">
+                    فتح بكج جديد (100 🪙)
+                </button>
+
+                <!-- Result Modal Overlay inside Gacha -->
+                <div id="gacha-result-modal" class="hidden absolute inset-0 bg-slate-950/95 rounded-2xl flex flex-col items-center justify-center p-6 z-20">
+                    <div id="gacha-card-glow" class="w-40 h-52 rounded-2xl border-4 flex flex-col items-center justify-center p-4 bg-slate-900 mb-4 shadow-2xl animate-bounce">
+                        <span id="gacha-res-icon" class="text-6xl mb-2">❓</span>
+                        <h3 id="gacha-res-name" class="font-bold text-lg">???</h3>
+                        <span id="gacha-res-rarity" class="text-xs px-2 py-0.5 rounded mt-2 font-bold">عادي</span>
+                    </div>
+                    <p id="gacha-res-desc" class="text-xs text-slate-300 max-w-xs mb-4">وصف القدرة...</p>
+                    <button onclick="closeGachaResult()" class="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold rounded-xl border border-slate-700">متابعة</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: IN-GAME ROOM & PLAYGROUND -->
+        <div id="screen-game" class="hidden flex-1 flex flex-col space-y-3">
+            
+            <!-- Room Info & Status Bar -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex justify-between items-center text-xs">
+                <div class="flex items-center gap-3">
+                    <span id="game-room-title" class="font-bold text-red-500">غرفة #101</span>
+                    <span id="game-phase-badge" class="px-2 py-1 bg-yellow-950 text-yellow-400 border border-yellow-600 rounded font-bold">مرحلة الانتظار</span>
+                    <span id="game-timer" class="text-slate-400 font-mono"><i class="fa-solid fa-clock"></i> 00:00</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="game-voice-status" class="hidden text-emerald-400 flex items-center gap-1">
+                        <i class="fa-solid fa-microphone"></i> غرف صوتية نشطة
+                    </span>
+                    <button onclick="leaveRoom()" class="px-3 py-1 bg-red-950 hover:bg-red-900 text-red-300 border border-red-800 rounded-lg">خروج</button>
+                </div>
+            </div>
+
+            <!-- Game Main Viewport -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1">
+                
+                <!-- Center/Left: Players Grid & Table -->
+                <div class="md:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-sm font-bold text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-users"></i> اللاعبون المشاركون
+                            </h3>
+                            <span class="text-xs text-slate-500" id="player-count-text">4 / 8 لاعبين</span>
+                        </div>
+
+                        <!-- Player Seats -->
+                        <div id="game-players-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Host / Start Controls -->
+                    <div id="room-lobby-controls" class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
+                        <p class="text-xs text-slate-400">يتطلب الحد الأدنى <strong class="text-red-400">4 لاعبين</strong> لبدء القيم.</p>
+                        <div class="flex gap-2">
+                            <button onclick="addBotPlayer()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl border border-slate-700">
+                                <i class="fa-solid fa-robot"></i> إضافة بوت
+                            </button>
+                            <button id="start-game-btn" onclick="startGameLoop()" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-lg transition">
+                                بدء اللعبة الآن
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- In-Game Action Panel (Shown during Night/Day) -->
+                    <div id="game-action-panel" class="hidden mt-4 pt-3 border-t border-slate-800">
+                        <h4 class="text-xs font-bold text-yellow-400 mb-2 flex items-center gap-1">
+                            <i class="fa-solid fa-bolt"></i> القدرة الخاصة بـ <span id="my-character-role-name">طبيعي</span>
+                        </h4>
+                        <div id="character-abilities-container" class="flex flex-wrap gap-2">
+                            <!-- Ability buttons injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side: Chat System & Action Logs -->
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between h-[420px] md:h-auto">
+                    <div class="border-b border-slate-800 pb-2 mb-2 flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-300 flex items-center gap-1">
+                            <i class="fa-solid fa-comments text-red-500"></i> محادثات وسجل الأحداث
+                        </span>
+                        <span id="chat-mode-label" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">شات</span>
+                    </div>
+
+                    <!-- Messages Feed -->
+                    <div id="game-chat-box" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs mb-2">
+                        <!-- Messages Injected -->
+                    </div>
+
+                    <!-- Chat Input Form -->
+                    <form onsubmit="handleSendChatMessage(event)" class="flex gap-2">
+                        <input type="text" id="chat-input-text" placeholder="اكتب رسالتك هنا..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-red-500">
+                        <button type="submit" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SECRET ADMIN PASSWORD MODAL -->
+    <div id="modal-admin-pass" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-purple-600 w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl">
+            <i class="fa-solid fa-key text-4xl text-purple-500 mb-3"></i>
+            <h3 class="text-lg font-bold text-purple-300 mb-1">رمز الأدمن المباشر</h3>
+            <p class="text-xs text-slate-400 mb-4">أدخل كلمة المرور الخاصة للوصول إلى لوحة تحكم أدمن المافيا</p>
+
+            <form onsubmit="verifyAdminCode(event)" class="space-y-4">
+                <input type="password" id="admin-code-input" placeholder="أدخل الرمز..." required class="w-full bg-slate-950 border border-purple-800 rounded-xl px-4 py-2.5 text-center font-mono text-purple-300 focus:outline-none focus:border-purple-500">
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeAdminPassModal()" class="flex-1 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">إلغاء</button>
+                    <button type="submit" class="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold">تأكيد الرمز</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ADMIN CONTROL PANEL MODAL -->
+    <div id="modal-admin-panel" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-purple-600 w-full max-w-md rounded-2xl p-6 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-purple-900/50 pb-3 mb-4">
+                <h3 class="font-bold text-purple-300 flex items-center gap-2">
+                    <i class="fa-solid fa-user-gear"></i> لوحة تحكم الأدمن (ADMIN)
+                </h3>
+                <button onclick="closeAdminPanelModal()" class="text-slate-400 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-3">
+                <!-- Option 1: Force William Afton -->
+                <div class="p-3 bg-slate-950 border border-purple-900/40 rounded-xl flex justify-between items-center">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-200">التحول للقاتل (ويليام أفتن)</h4>
+                        <p class="text-[10px] text-slate-400">تعيين دورك كـ William Afton القاتل غصباً</p>
+                    </div>
+                    <button onclick="adminForceKillerRole()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-lg transition">تفعيل</button>
+                </div>
+
+                <!-- Option 2: Unlock All Ultra Rare Characters -->
+                <div class="p-3 bg-slate-950 border border-purple-900/40 rounded-xl flex justify-between items-center">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-200">منح كل الشخصيات النادرة</h4>
+                        <p class="text-[10px] text-slate-400">إضافة جميع الشخصيات وبكج ويليام أفتن للحساب</p>
+                    </div>
+                    <button onclick="adminGrantAllCharacters()" class="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-slate-950 text-xs font-bold rounded-lg transition">منح الكل</button>
+                </div>
+
+                <!-- Option 3: Add Unlimited Coins -->
+                <div class="p-3 bg-slate-950 border border-purple-900/40 rounded-xl flex justify-between items-center">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-200">إضافة 5000 كوينز</h4>
+                        <p class="text-[10px] text-slate-400">زيادة رصيد النقاط لفتح البكجات</p>
+                    </div>
+                    <button onclick="adminAddCoins()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition">+5000 🪙</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WILLIAM AFTON FORGERY MODAL -->
+    <div id="modal-afton-forge" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-purple-600 w-full max-w-md rounded-2xl p-6 shadow-2xl">
+            <h3 class="font-bold text-purple-400 text-sm mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-mask"></i> قدرة تزوير الرسالة (ويليام أفتن)
+            </h3>
+            <p class="text-xs text-slate-400 mb-4">اختر اللاعب الذي تريد انتحال شخصيته واكتب الرسالة المزورة لتشتيت الجميع!</p>
+
+            <form onsubmit="executeForgerySkill(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">اختر الضحية للانتحال:</label>
+                    <select id="forge-target-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500">
+                        <!-- Options filled by JS -->
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">نص الرسالة المزورة:</label>
+                    <input type="text" id="forge-message-input" placeholder="مثال: أنا الشرطي وياسر هو القاتل!" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500">
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-afton-forge')" class="flex-1 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">إلغاء</button>
+                    <button type="submit" class="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold">إرسال التزوير</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC & GAME ENGINE -->
+    <script>
+        
+        // 1. FNAF CHARACTERS & SKILLS DATABASE
+        const CHARACTERS = {
+            freddy: {
+                id: 'freddy',
+                name: 'فريدي (Freddy)',
+                icon: '🐻',
+                rarity: 'عادي',
+                color: 'text-amber-500',
+                borderColor: 'border-amber-600',
+                abilityName: 'صوت القائد (كشف الدور)',
+                desc: 'يكشف دور لاعب واحد غامض في الجيم (مرة واحدة).'
+            },
+            bonnie: {
+                id: 'bonnie',
+                name: 'بوني (Bonnie)',
+                icon: '🐰',
+                rarity: 'عادي',
+                color: 'text-indigo-400',
+                borderColor: 'border-indigo-600',
+                abilityName: 'صدمة الرعب (كتم لاعب)',
+                desc: 'يمنع لاعباً من التحدث في المحادثة للجولة الحالية (مرة واحدة).'
+            },
+            chica: {
+                id: 'chica',
+                name: 'تشيكا (Chica)',
+                icon: '🐥',
+                rarity: 'عادي',
+                color: 'text-yellow-400',
+                borderColor: 'border-yellow-600',
+                abilityName: 'درع البيتزا (حماية)',
+                desc: 'تحمي لاعباً معيناً من هجوم القاتل في الليل (مرة واحدة).'
+            },
+            foxy: {
+                id: 'foxy',
+                name: 'فوكسي (Foxy)',
+                icon: '🦊',
+                rarity: 'عادي',
+                color: 'text-red-500',
+                borderColor: 'border-red-600',
+                abilityName: 'اندفاع الخاطف (فحص سريع)',
+                desc: 'يفحص إن كان الهدف من فريق القاتل أم لا (مرة واحدة).'
+            },
+            puppet: {
+                id: 'puppet',
+                name: 'الدمية (Puppet)',
+                icon: '🎭',
+                rarity: 'نادر',
+                color: 'text-slate-200',
+                borderColor: 'border-slate-400',
+                abilityName: 'حارس الارواح (إحياء)',
+                desc: 'يعيد لاعباً مقتولاً إلى الحياة (مرة واحدة).'
+            },
+            william: {
+                id: 'william',
+                name: 'ويليام أفتن (William Afton)',
+                icon: '🐰🔪',
+                rarity: 'نادر جداً (Ultra Rare)',
+                color: 'text-purple-400',
+                borderColor: 'border-purple-600',
+                isKiller: true,
+                desc: 'صاحب البدلة الأرجوانية والقاتل الأساسي مع 3 قدرات خارقة (استخدام مرة واحدة).'
+            }
+        };
+
+        // APP STATE MANAGEMENT
+        let currentUser = null;
+        let userInventory = ['freddy', 'bonnie', 'chica', 'foxy']; // Default unlocked
+        let resetClickCounter = 0;
+        let isAdmin = false;
+
+        // GAME LOBBY & ROOM STATE
+        let currentRoom = null;
+        let roomCreationMode = 'chat'; // 'chat' or 'voice'
+        let gameTimerInterval = null;
+
+        // 2. AUTHENTICATION & LOCALSTORAGE PERSISTENCE
+        window.onload = function() {
+            const savedUser = localStorage.getItem('fnaf_mafia_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    if (currentUser.inventory) userInventory = currentUser.inventory;
+                    updateHeaderInfo();
+                    navigateTo('lobby');
+                } catch (e) {
+                    localStorage.removeItem('fnaf_mafia_user');
+                }
+            }
+            renderLobbyRooms();
+            renderUserCharacters();
+        };
+
+        function switchAuthTab(tab) {
+            const loginForm = document.getElementById('form-login');
+            const regForm = document.getElementById('form-register');
+            const tabLogin = document.getElementById('tab-login-btn');
+            const tabReg = document.getElementById('tab-register-btn');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                regForm.classList.add('hidden');
+                tabLogin.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-red-600 text-white transition";
+                tabReg.className = "flex-1 py-2 text-sm font-bold rounded-lg text-slate-400 hover:text-slate-200 transition";
+            } else {
+                loginForm.classList.add('hidden');
+                regForm.classList.remove('hidden');
+                tabReg.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-red-600 text-white transition";
+                tabLogin.className = "flex-1 py-2 text-sm font-bold rounded-lg text-slate-400 hover:text-slate-200 transition";
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value.trim();
+            if (!username) return;
+
+            currentUser = {
+                username: username,
+                level: 1,
+                coins: 500,
+                inventory: userInventory
+            };
+
+            saveUserData();
+            updateHeaderInfo();
+            navigateTo('lobby');
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const username = document.getElementById('reg-username').value.trim();
+            if (!username) return;
+
+            currentUser = {
+                username: username,
+                level: 1,
+                coins: 500,
+                inventory: userInventory
+            };
+
+            saveUserData();
+            updateHeaderInfo();
+            navigateTo('lobby');
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem('fnaf_mafia_user');
+            updateHeaderInfo();
+            navigateTo('auth');
+        }
+
+        function saveUserData() {
+            if (currentUser) {
+                currentUser.inventory = userInventory;
+                localStorage.setItem('fnaf_mafia_user', JSON.stringify(currentUser));
+            }
+        }
+
+        function updateHeaderInfo() {
+            const statusEl = document.getElementById('header-user-status');
+            const lobbyUser = document.getElementById('lobby-username');
+            const lobbyLvl = document.getElementById('lobby-user-lvl');
+            const lobbyCoins = document.getElementById('lobby-user-coins');
+            const gachaCoins = document.getElementById('gacha-user-coins');
+
+            if (currentUser) {
+                statusEl.innerText = `مسجل كـ: ${currentUser.username}`;
+                lobbyUser.innerText = currentUser.username;
+                lobbyLvl.innerText = currentUser.level;
+                lobbyCoins.innerText = currentUser.coins;
+                gachaCoins.innerText = currentUser.coins;
+            } else {
+                statusEl.innerText = 'غير مسجل الدخول';
+            }
+        }
+
+        function navigateTo(screenId) {
+            document.getElementById('screen-auth').classList.add('hidden');
+            document.getElementById('screen-lobby').classList.add('hidden');
+            document.getElementById('screen-gacha').classList.add('hidden');
+            document.getElementById('screen-game').classList.add('hidden');
+
+            document.getElementById(`screen-${screenId}`).classList.remove('hidden');
+
+            if (screenId === 'lobby') {
+                renderLobbyRooms();
+                renderUserCharacters();
+            }
+        }
+
+        // 3. ADMIN EASTER EGG (RESET BUTTON 7 CLICKS & CODE)
+        function handleSecretResetClick() {
+            resetClickCounter++;
+            document.getElementById('reset-click-count').innerText = resetClickCounter;
+
+            if (resetClickCounter >= 7) {
+                resetClickCounter = 0;
+                document.getElementById('reset-click-count').innerText = 0;
+                document.getElementById('modal-admin-pass').classList.remove('hidden');
+            }
+        }
+
+        function closeAdminPassModal() {
+            document.getElementById('modal-admin-pass').classList.add('hidden');
+        }
+
+        function verifyAdminCode(e) {
+            e.preventDefault();
+            const code = document.getElementById('admin-code-input').value.trim();
+            if (code === 'yasser3my') {
+                isAdmin = true;
+                closeAdminPassModal();
+                document.getElementById('admin-badge').classList.remove('hidden');
+                document.getElementById('admin-panel-btn').classList.remove('hidden');
+                alert('تم تفعيل صلاحيات الأدمن بنجاح! 🔑');
+            } else {
+                alert('رمز خاطئ! حاول مجدداً.');
+            }
+        }
+
+        function openAdminModal() {
+            document.getElementById('modal-admin-panel').classList.remove('hidden');
+        }
+
+        function closeAdminPanelModal() {
+            document.getElementById('modal-admin-panel').classList.add('hidden');
+        }
+
+        function adminForceKillerRole() {
+            if (!currentRoom) {
+                alert('يجب أن تكون في داخل غرفة أولاً لتغيير دورك!');
+                return;
+            }
+            const me = currentRoom.players.find(p => p.isMe);
+            if (me) {
+                me.character = CHARACTERS.william;
+                me.role = 'william';
+                alert('تم تعيين دورك كـ ويليام أفتن (القاتل) غصباً بنجاح!');
+                renderGamePlayers();
+            }
+            closeAdminPanelModal();
+        }
+
+        function adminGrantAllCharacters() {
+            userInventory = Object.keys(CHARACTERS);
+            saveUserData();
+            renderUserCharacters();
+            alert('تم فتح جميع شخصيات FNAF النادرة لحسابك!');
+            closeAdminPanelModal();
+        }
+
+        function adminAddCoins() {
+            if (currentUser) {
+                currentUser.coins += 5000;
+                saveUserData();
+                updateHeaderInfo();
+                alert('تم إضافة 5000 كوينز بنجاح!');
+            }
+            closeAdminPanelModal();
+        }
+
+        // 4. GACHA & PACK UNLOCK SYSTEM
+        function openGachaPack() {
+            if (!currentUser || currentUser.coins < 100) {
+                alert('لا تملك كوينز كافية! (المطلوب 100 🪙)');
+                return;
+            }
+
+            currentUser.coins -= 100;
+            saveUserData();
+            updateHeaderInfo();
+
+            // Drop rate probabilities:
+            // William Afton: 5%
+            // Puppet: 15%
+            // Freddy, Bonnie, Chica, Foxy: 20% each
+            const rand = Math.random() * 100;
+            let unlockedKey = 'freddy';
+
+            if (rand <= 5) {
+                unlockedKey = 'william';
+            } else if (rand <= 20) {
+                unlockedKey = 'puppet';
+            } else if (rand <= 40) {
+                unlockedKey = 'foxy';
+            } else if (rand <= 60) {
+                unlockedKey = 'chica';
+            } else if (rand <= 80) {
+                unlockedKey = 'bonnie';
+            } else {
+                unlockedKey = 'freddy';
+            }
+
+            if (!userInventory.includes(unlockedKey)) {
+                userInventory.push(unlockedKey);
+                saveUserData();
+            }
+
+            const char = CHARACTERS[unlockedKey];
+            const modal = document.getElementById('gacha-result-modal');
+            const glow = document.getElementById('gacha-card-glow');
+
+            document.getElementById('gacha-res-icon').innerText = char.icon;
+            document.getElementById('gacha-res-name').innerText = char.name;
+            document.getElementById('gacha-res-rarity').innerText = char.rarity;
+            document.getElementById('gacha-res-desc').innerText = char.desc;
+
+            if (char.id === 'william') {
+                glow.className = "w-40 h-52 rounded-2xl border-4 border-purple-500 bg-purple-950 flex flex-col items-center justify-center p-4 mb-4 shadow-2xl animate-bounce purple-border";
+            } else if (char.id === 'puppet') {
+                glow.className = "w-40 h-52 rounded-2xl border-4 border-yellow-400 bg-slate-900 flex flex-col items-center justify-center p-4 mb-4 shadow-2xl animate-bounce gold-border";
+            } else {
+                glow.className = "w-40 h-52 rounded-2xl border-4 border-slate-600 bg-slate-900 flex flex-col items-center justify-center p-4 mb-4 shadow-2xl animate-bounce";
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeGachaResult() {
+            document.getElementById('gacha-result-modal').classList.add('hidden');
+        }
+
+        function renderUserCharacters() {
+            const grid = document.getElementById('user-characters-grid');
+            grid.innerHTML = '';
+
+            Object.keys(CHARACTERS).forEach(key => {
+                const char = CHARACTERS[key];
+                const isUnlocked = userInventory.includes(key);
+
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border flex flex-col items-center text-center transition ${isUnlocked ? 'bg-slate-950 border-slate-700' : 'bg-slate-950/40 border-slate-900 opacity-40 grayscale'}`;
+
+                card.innerHTML = `
+                    <span class="text-3xl mb-1">${char.icon}</span>
+                    <span class="text-[11px] font-bold text-slate-200 truncate w-full">${char.name}</span>
+                    <span class="text-[9px] mt-1 px-1.5 py-0.5 rounded ${isUnlocked ? 'bg-emerald-950 text-emerald-400' : 'bg-slate-800 text-slate-500'}">
+                        ${isUnlocked ? 'مفتوح' : 'مغلق'}
+                    </span>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // 5. ROOM & LOBBY SYSTEM
+        function setRoomMode(mode) {
+            roomCreationMode = mode;
+            const chatBtn = document.getElementById('mode-chat-btn');
+            const voiceBtn = document.getElementById('mode-voice-btn');
+
+            if (mode === 'chat') {
+                chatBtn.className = "py-2 px-3 border border-red-500 bg-red-950/40 text-red-300 text-xs font-bold rounded-xl flex items-center justify-center gap-2";
+                voiceBtn.className = "py-2 px-3 border border-slate-800 bg-slate-950 text-slate-400 text-xs font-bold rounded-xl flex items-center justify-center gap-2";
+            } else {
+                voiceBtn.className = "py-2 px-3 border border-red-500 bg-red-950/40 text-red-300 text-xs font-bold rounded-xl flex items-center justify-center gap-2";
+                chatBtn.className = "py-2 px-3 border border-slate-800 bg-slate-950 text-slate-400 text-xs font-bold rounded-xl flex items-center justify-center gap-2";
+            }
+        }
+
+        const mockRooms = [
+            { id: 101, name: 'غرفة البيتزا الليلية', mode: 'chat', players: 3, max: 8 },
+            { id: 102, name: 'روم المافيا الصوتية', mode: 'voice', players: 2, max: 8 }
+        ];
+
+        function renderLobbyRooms() {
+            const container = document.getElementById('rooms-container');
+            container.innerHTML = '';
+
+            mockRooms.forEach(room => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center hover:border-slate-700 transition";
+                div.innerHTML = `
+                    <div>
+                        <h4 class="font-bold text-xs text-slate-200">${room.name}</h4>
+                        <span class="text-[10px] text-slate-400 flex items-center gap-1">
+                            <i class="fa-solid ${room.mode === 'voice' ? 'fa-microphone text-emerald-400' : 'fa-comments text-blue-400'}"></i>
+                            ${room.mode === 'voice' ? 'صوتي' : 'كتابي'}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-mono text-slate-400">${room.players}/${room.max}</span>
+                        <button onclick="joinExistingRoom(${room.id})" class="px-3 py-1.5 bg-red-600/80 hover:bg-red-600 text-white text-xs rounded-lg font-bold">دخول</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function createNewRoom() {
+            if (!currentUser) {
+                alert('سجل دخولك أولاً!');
+                return;
+            }
+
+            const roomName = document.getElementById('new-room-name').value.trim() || 'غرفة الرعب الخادعة';
+            
+            // Build current room object
+            currentRoom = {
+                id: Math.floor(100 + Math.random() * 900),
+                name: roomName,
+                mode: roomCreationMode,
+                phase: 'lobby', // 'lobby', 'night', 'day', 'ended'
+                phaseTime: 0,
+                players: [
+                    {
+                        id: 'user_me',
+                        name: currentUser.username,
+                        isMe: true,
+                        isAlive: true,
+                        character: getRandomUnlockedCharacter(),
+                        usedAbility: false,
+                        votes: 0
+                    }
+                ],
+                logs: []
+            };
+
+            // Auto add 3 bot players to satisfy the 4 player minimum requirement
+            for (let i = 1; i <= 3; i++) {
+                addBotPlayer(false);
+            }
+
+            setupGameRoomUI();
+            navigateTo('game');
+        }
+
+        function joinExistingRoom(roomId) {
+            if (!currentUser) {
+                alert('سجل دخولك أولاً!');
+                return;
+            }
+
+            currentRoom = {
+                id: roomId,
+                name: `غرفة #${roomId}`,
+                mode: 'chat',
+                phase: 'lobby',
+                phaseTime: 0,
+                players: [
+                    {
+                        id: 'user_me',
+                        name: currentUser.username,
+                        isMe: true,
+                        isAlive: true,
+                        character: getRandomUnlockedCharacter(),
+                        usedAbility: false,
+                        votes: 0
+                    }
+                ],
+                logs: []
+            };
+
+            for (let i = 1; i <= 3; i++) {
+                addBotPlayer(false);
+            }
+
+            setupGameRoomUI();
+            navigateTo('game');
+        }
+
+        function getRandomUnlockedCharacter() {
+            const randomKey = userInventory[Math.floor(Math.random() * userInventory.length)];
+            return CHARACTERS[randomKey] || CHARACTERS.freddy;
+        }
+
+        function addBotPlayer(triggerRender = true) {
+            if (!currentRoom) return;
+            if (currentRoom.players.length >= 8) {
+                alert('الغرفة ممتلئة بـ 8 لاعبين!');
+                return;
+            }
+
+            const botNames = ['فهد', 'ياسر', 'سارة', 'عمر', 'خالد', 'ريما'];
+            const unusedNames = botNames.filter(n => !currentRoom.players.some(p => p.name === n));
+            const selectedName = unusedNames[Math.floor(Math.random() * unusedNames.length)] || `لاعب_${currentRoom.players.length + 1}`;
+
+            const charKeys = Object.keys(CHARACTERS);
+            const randomCharKey = charKeys[Math.floor(Math.random() * charKeys.length)];
+
+            currentRoom.players.push({
+                id: `bot_${Date.now()}_${Math.random()}`,
+                name: selectedName,
+                isMe: false,
+                isAlive: true,
+                character: CHARACTERS[randomCharKey],
+                usedAbility: false,
+                votes: 0
+            });
+
+            if (triggerRender) {
+                renderGamePlayers();
+            }
+        }
+
+        function setupGameRoomUI() {
+            document.getElementById('game-room-title').innerText = currentRoom.name;
+            document.getElementById('chat-mode-label').innerText = currentRoom.mode === 'voice' ? 'صوتي' : 'شات';
+            
+            if (currentRoom.mode === 'voice') {
+                document.getElementById('game-voice-status').classList.remove('hidden');
+            } else {
+                document.getElementById('game-voice-status').classList.add('hidden');
+            }
+
+            addGameLog('النظام', 'مرحباً بك في الغرفة! يلزم 4 لاعبين على الأقل لبدء اللعبة.');
+            renderGamePlayers();
+        }
+
+        function renderGamePlayers() {
+            if (!currentRoom) return;
+            const grid = document.getElementById('game-players-grid');
+            grid.innerHTML = '';
+
+            document.getElementById('player-count-text').innerText = `${currentRoom.players.length} / 8 لاعبين`;
+
+            currentRoom.players.forEach((p, index) => {
+                const card = document.createElement('div');
+                const isDead = !p.isAlive;
+
+                card.className = `p-3 rounded-xl border flex flex-col items-center justify-between relative text-center transition ${isDead ? 'bg-red-950/20 border-red-900/40 opacity-50' : 'bg-slate-950 border-slate-800'}`;
+
+                card.innerHTML = `
+                    <div class="text-3xl mb-1">${isDead ? '💀' : p.character.icon}</div>
+                    <span class="text-xs font-bold text-slate-200 truncate w-full">${p.name} ${p.isMe ? '(أنت)' : ''}</span>
+                    <span class="text-[10px] text-slate-400 mt-1">${p.character.name}</span>
+                    
+                    ${currentRoom.phase === 'day' && !isDead ? `
+                        <button onclick="votePlayer('${p.id}')" class="mt-2 px-2 py-1 bg-red-600/80 hover:bg-red-600 text-white text-[10px] rounded-lg w-full">
+                            تصويت (${p.votes || 0})
+                        </button>
+                    ` : ''}
+                `;
+                grid.appendChild(card);
+            });
+
+            // Update user ability buttons if game started
+            if (currentRoom.phase !== 'lobby') {
+                renderUserAbilities();
+            }
+        }
+
+        function leaveRoom() {
+            if (confirm('هل أنت تأكد من خروجك من الغرفة؟')) {
+                clearInterval(gameTimerInterval);
+                currentRoom = null;
+                navigateTo('lobby');
+            }
+        }
+
+        // 6. MAIN GAMEPLAY LOOP (NIGHT / DAY / VOTING)
+        function startGameLoop() {
+            if (!currentRoom) return;
+            if (currentRoom.players.length < 4) {
+                alert('يجب تواجد 4 لاعبين على الأقل لبدء المباراة!');
+                return;
+            }
+
+            document.getElementById('room-lobby-controls').classList.add('hidden');
+            document.getElementById('game-action-panel').classList.remove('hidden');
+
+            // Assign roles: Ensure 1 Killer (William Afton) exists
+            assignRoles();
+
+            addGameLog('النظام', 'بدأت اللعبة! تم توزيع أدوار شخصيات FNAF سرّاً.');
+            startNightPhase();
+        }
+
+        function assignRoles() {
+            // Check if user is forced via Admin
+            const me = currentRoom.players.find(p => p.isMe);
+            
+            // Randomly select one player to be William Afton if not assigned
+            const hasKiller = currentRoom.players.some(p => p.character.id === 'william');
+            if (!hasKiller) {
+                const randIndex = Math.floor(Math.random() * currentRoom.players.length);
+                currentRoom.players[randIndex].character = CHARACTERS.william;
+            }
+
+            renderGamePlayers();
+        }
+
+        function startNightPhase() {
+            currentRoom.phase = 'night';
+            document.getElementById('game-phase-badge').className = "px-2 py-1 bg-indigo-950 text-indigo-400 border border-indigo-600 rounded font-bold";
+            document.getElementById('game-phase-badge').innerText = 'مرحلة الليل 🌙';
+
+            addGameLog('النظام', 'حلّ الليل! يمكن للمافيا والأنيماترونكس استخدام قدراتهم الخاصة بحكمة.');
+            renderUserAbilities();
+        }
+
+        function startDayPhase() {
+            currentRoom.phase = 'day';
+            document.getElementById('game-phase-badge').className = "px-2 py-1 bg-yellow-950 text-yellow-400 border border-yellow-600 rounded font-bold";
+            document.getElementById('game-phase-badge').innerText = 'مرحلة النهار ☀️';
+
+            // Reset votes
+            currentRoom.players.forEach(p => p.votes = 0);
+
+            addGameLog('النظام', 'أشرقت الشمس! ناقشوا في المحادثة وصوتوا لإقصاء القاتل المشتبه به.');
+            renderGamePlayers();
+        }
+
+        // 7. CHARACTER ABILITIES SYSTEM
+        function renderUserAbilities() {
+            const me = currentRoom.players.find(p => p.isMe);
+            if (!me) return;
+
+            document.getElementById('my-character-role-name').innerText = me.character.name;
+            const container = document.getElementById('character-abilities-container');
+            container.innerHTML = '';
+
+            if (me.usedAbility) {
+                container.innerHTML = `<span class="text-xs text-slate-500">لقد استخدمت قدرتك الخاصة لهذه المباراة!</span>`;
+                return;
+            }
+
+            if (me.character.id === 'william') {
+                // William Afton 3 Unique Skills
+                container.innerHTML = `
+                    <button onclick="openAftonForgeModal()" class="px-3 py-1.5 bg-purple-900/80 hover:bg-purple-800 text-purple-200 border border-purple-600 rounded-xl text-xs font-bold">
+                        1. تزوير رسالة (انتحال)
+                    </button>
+                    <button onclick="useControlDeceasedSkill()" class="px-3 py-1.5 bg-purple-900/80 hover:bg-purple-800 text-purple-200 border border-purple-600 rounded-xl text-xs font-bold">
+                        2. التحكم بالموتى (إحياء تابع)
+                    </button>
+                    <button onclick="useShadowCamouflageSkill()" class="px-3 py-1.5 bg-purple-900/80 hover:bg-purple-800 text-purple-200 border border-purple-600 rounded-xl text-xs font-bold">
+                        3. الاختفاء والتحصين
+                    </button>
+                `;
+            } else {
+                // Regular character single ability
+                container.innerHTML = `
+                    <button onclick="useStandardCharacterSkill()" class="px-3 py-1.5 bg-red-900/80 hover:bg-red-800 text-red-200 border border-red-600 rounded-xl text-xs font-bold">
+                        تفعيل: ${me.character.abilityName}
+                    </button>
+                `;
+            }
+        }
+
+        // Standard skill invocation
+        function useStandardCharacterSkill() {
+            const me = currentRoom.players.find(p => p.isMe);
+            if (!me || me.usedAbility) return;
+
+            me.usedAbility = true;
+            addGameLog('قدرة خاصة', `قام ${me.name} بتفعيل قدرة (${me.character.abilityName}) بنجاح!`);
+            renderUserAbilities();
+        }
+
+        // William Afton Ability 1: Message Forgery
+        function openAftonForgeModal() {
+            const select = document.getElementById('forge-target-select');
+            select.innerHTML = '';
+
+            currentRoom.players.filter(p => !p.isMe && p.isAlive).forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.name;
+                opt.innerText = p.name;
+                select.appendChild(opt);
+            });
+
+            document.getElementById('modal-afton-forge').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function executeForgerySkill(e) {
+            e.preventDefault();
+            const targetName = document.getElementById('forge-target-select').value;
+            const message = document.getElementById('forge-message-input').value.trim();
+
+            if (!targetName || !message) return;
+
+            const me = currentRoom.players.find(p => p.isMe);
+            if (me) me.usedAbility = true;
+
+            closeModal('modal-afton-forge');
+
+            // Send forged message as if target sent it
+            addChatMessage(targetName, `[مزورة]: ${message}`, true);
+            renderUserAbilities();
+        }
+
+        // William Afton Ability 2: Control Deceased
+        function useControlDeceasedSkill() {
+            const me = currentRoom.players.find(p => p.isMe);
+            if (!me || me.usedAbility) return;
+
+            me.usedAbility = true;
+            addGameLog('قدرة ويليام', `استخدم ويليام أفتن طاقة الأرواح للتحكم بميت وتحويله لمساعد خفي!`);
+            renderUserAbilities();
+        }
+
+        // William Afton Ability 3: Shadow Camouflage
+        function useShadowCamouflageSkill() {
+            const me = currentRoom.players.find(p => p.isMe);
+            if (!me || me.usedAbility) return;
+
+            me.usedAbility = true;
+            addGameLog('قدرة ويليام', `تسلل ويليام أفتن في الظلال وحصل على حصانة كاملة ضد التصويت لهذا الدور!`);
+            renderUserAbilities();
+        }
+
+        // Voting mechanism
+        function votePlayer(targetId) {
+            if (currentRoom.phase !== 'day') {
+                alert('التصويت متاح فقط خلال مرحلة النهار!');
+                return;
+            }
+
+            const target = currentRoom.players.find(p => p.id === targetId);
+            if (target) {
+                target.votes = (target.votes || 0) + 1;
+                addGameLog('تصويت', `تم التصويت ضد ${target.name}.`);
+                renderGamePlayers();
+
+                // Check vote elimination check
+                if (target.votes >= 2) {
+                    target.isAlive = false;
+                    addGameLog('إقصاء', `تقرر إقصاء ${target.name} بعد حصوله على غالبية الاصوات!`);
+                    renderGamePlayers();
+                    checkWinConditions();
+                }
+            }
+        }
+
+        function checkWinConditions() {
+            const alivePlayers = currentRoom.players.filter(p => p.isAlive);
+            const killerAlive = alivePlayers.some(p => p.character.id === 'william');
+
+            if (!killerAlive) {
+                alert('🎉 انتصر فريق المواطنين والأنيماترونكس وتم القضاء على القاتل!');
+                currentRoom.phase = 'ended';
+            } else if (alivePlayers.length <= 2) {
+                alert('🔪 انتصر ويليام أفتن والمافيا وسيطروا على البيتزا!');
+                currentRoom.phase = 'ended';
+            }
+        }
+
+        // 8. CHAT & EVENT LOGGING SYSTEM
+        function handleSendChatMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input-text');
+            const text = input.value.trim();
+            if (!text || !currentUser) return;
+
+            addChatMessage(currentUser.username, text);
+            input.value = '';
+        }
+
+        function addChatMessage(sender, text, isForged = false) {
+            const chatBox = document.getElementById('game-chat-box');
+            const msgDiv = document.createElement('div');
+
+            msgDiv.className = `p-2 rounded-xl border text-xs ${isForged ? 'bg-purple-950/60 border-purple-600 text-purple-200' : 'bg-slate-950 border-slate-800 text-slate-200'}`;
+            msgDiv.innerHTML = `
+                <strong class="${isForged ? 'text-purple-400' : 'text-red-400'}">${sender}:</strong>
+                <span>${text}</span>
+            `;
+
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function addGameLog(tag, text) {
+            const chatBox = document.getElementById('game-chat-box');
+            const logDiv = document.createElement('div');
+
+            logDiv.className = "p-2 rounded-xl bg-slate-900 border border-slate-700/60 text-slate-300 text-xs italic";
+            logDiv.innerHTML = `<span class="text-yellow-400 font-bold">[${tag}]</span> ${text}`;
+
+            chatBox.appendChild(logDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
